@@ -1,4 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
+    // Force scroll to top on reload
+    if (history.scrollRestoration) {
+        history.scrollRestoration = 'manual';
+    }
+    window.scrollTo(0, 0);
+
     console.log("script.js carregou");
 
     // =========================
@@ -281,11 +287,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         });
                         this.hasPingpongVisible = pingpongNow;
 
-                        this.needsRender = true;
                         if (this.activeTargetsCount > 0) this.start();
-                        else this.stop();
                     },
-                    { threshold: 0.01, rootMargin: "150px 0px 150px 0px" } // pré-ativa antes de entrar
+                    { threshold: 0, rootMargin: "300px 0px 300px 0px" }
                 );
 
                 this.targets.forEach((t) => observer.observe(t.el));
@@ -299,10 +303,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         start() {
             if (this.running) return;
-            if (this.activeTargetsCount <= 0) return;
-
             this.running = true;
-            requestAnimationFrame((ts) => this.render(ts));
+            requestAnimationFrame(() => this.render());
         }
 
         stop() {
@@ -312,21 +314,22 @@ document.addEventListener("DOMContentLoaded", () => {
         render() {
             if (!this.running) return;
 
-            // Se não precisa renderizar e não tem pingpong, dorme
-            if (!this.needsRender && !this.hasPingpongVisible) {
-                this.running = false;
-                return;
-            }
-
             const lerp = (a, b, t) => a + (b - a) * t;
 
-            // suaviza scroll só quando mudou
+            // suaviza scroll
             this.smoothScrollPos = lerp(this.smoothScrollPos, this.lastScrollY, 0.08);
 
+            const scrollDistance = Math.abs(this.smoothScrollPos - this.lastScrollY);
             const time = performance.now() * 0.001;
 
+            // Se estabilizou e não tem pingpong, para o loop para poupar CPU
+            if (scrollDistance < 0.01 && !this.hasPingpongVisible) {
+                this.running = false;
+                this.smoothScrollPos = this.lastScrollY; // Snap final exato
+            }
+
             for (const t of this.targets) {
-                if (!t.isVisible) continue;
+                if (!t.isVisible && !this.running) continue;
 
                 let offset = this.smoothScrollPos * t.speed * t.direction;
                 if (this.isMobile) offset *= 0.4;
@@ -341,19 +344,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 const x = t.axis === "x" ? offset : 0;
                 const y = t.axis === "y" ? offset : 0;
 
-                // evita setar style se não mudou (reduz custo)
-                const rx = Math.round(x * 100) / 100;
-                const ry = Math.round(y * 100) / 100;
-
-                if (t.lastX !== rx || t.lastY !== ry) {
-                    t.el.style.transform = `translate3d(${rx}px, ${ry}px, 0)`;
-                    t.lastX = rx;
-                    t.lastY = ry;
+                // sub-pixel precision sem rounding agressivo
+                if (t.lastX !== x || t.lastY !== y) {
+                    t.el.style.transform = `translate3d(${x.toFixed(3)}px, ${y.toFixed(3)}px, 0)`;
+                    t.lastX = x;
+                    t.lastY = y;
                 }
             }
 
-            this.needsRender = false;
-            requestAnimationFrame(() => this.render());
+            if (this.running) {
+                requestAnimationFrame(() => this.render());
+            }
         }
     }
 

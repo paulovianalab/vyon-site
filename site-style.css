@@ -1,6 +1,12 @@
 /* =========================================
    1. VARIABLES & RESET
    ========================================= */
+@media (max-width: 1024px) {
+    .desktop-only {
+        display: none !important;
+    }
+}
+
 :root {
     /* Colors */
     --bg-dark: #050506;
@@ -577,7 +583,7 @@ html {
 
 @media (max-width: 768px) {
     .site-header {
-        padding: 0.8rem 0;
+        padding: 1.3rem 0;
     }
 
     .site-header .btn {
@@ -1678,7 +1684,7 @@ html {
 }
 
 .footer-logo .logo-img {
-    height: 32px;
+    height: 25px;
     width: auto;
     display: block;
 }
@@ -1770,6 +1776,13 @@ html {
         transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
     transition-delay: var(--d, 0ms);
     will-change: opacity, transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+.hero-title {
+    transform: translateZ(0);
+    -webkit-font-smoothing: antialiased;
 }
 
 .fade-up.is-visible {
@@ -1780,16 +1793,15 @@ html {
 /* blur premium só no desktop (opcional) */
 @media (min-width: 1024px) {
     .fade-up {
-        filter: blur(1.5px);
         transition:
             opacity 900ms cubic-bezier(0.22, 1, 0.36, 1),
-            transform 900ms cubic-bezier(0.22, 1, 0.36, 1),
-            filter 900ms cubic-bezier(0.22, 1, 0.36, 1);
-        will-change: opacity, transform, filter;
+            transform 900ms cubic-bezier(0.22, 1, 0.36, 1);
+        will-change: opacity, transform;
     }
 
     .fade-up.is-visible {
-        filter: blur(0);
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
     }
 }
 
